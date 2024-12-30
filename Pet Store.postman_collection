@@ -1,0 +1,598 @@
+{
+	"info": {
+		"_postman_id": "ed1e4edd-48a7-4c88-8376-d1bd23face7b",
+		"name": "Pet Store Copy",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "21794997"
+	},
+	"item": [
+		{
+			"name": "Pet test suite",
+			"item": [
+				{
+					"name": "Find pet by Id",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const randomId = pm.environment.replaceIn(\"{{$randomInt}}\");\r",
+									"\r",
+									"const options = {\r",
+									"  'method': 'POST',\r",
+									"  'url': 'https://petstore.swagger.io/v2/pet',\r",
+									"  'header': {\r",
+									"    'Content-Type': 'application/json',\r",
+									"  },\r",
+									"  body: JSON.stringify({\r",
+									"    \"id\": `${randomId}`,\r",
+									"    \"category\": {\r",
+									"      \"id\": 1,\r",
+									"      \"name\": \"Executive\"\r",
+									"    },\r",
+									"    \"name\": \"Arny\",\r",
+									"    \"photoUrls\": [],\r",
+									"    \"tags\": [\r",
+									"      {\r",
+									"        \"id\": 1,\r",
+									"        \"name\": \"arny_cool\"\r",
+									"      }\r",
+									"    ],\r",
+									"    \"status\": \"available\"\r",
+									"  })\r",
+									"};\r",
+									"\r",
+									"pm.environment.set('createPetRequestBody', options.body);\r",
+									"\r",
+									"pm.sendRequest(options, (error, response) => {\r",
+									"   const data = response.json();\r",
+									"   pm.environment.set('petId', data.id);\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"//tests \r",
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"var jsonData = pm.response.json();\r",
+									"pm.test(\"Pet's name\", function () {\r",
+									"    pm.expect(jsonData.name).to.eql('Arny');\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Pet's status\", function () {\r",
+									"    pm.expect(jsonData.status).to.eql('available');\r",
+									"});\r",
+									"\r",
+									"// post-request\r",
+									"const petId = pm.environment.get('petId');\r",
+									"var options = {\r",
+									"  'method': 'DELETE',\r",
+									"  'url': `https://petstore.swagger.io/v2/pet/${petId}`,\r",
+									"  'header': {\r",
+									"  }\r",
+									"};\r",
+									"\r",
+									"pm.sendRequest(options, (error, response) => {\r",
+									"});\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/pet/:petId",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pet",
+								":petId"
+							],
+							"variable": [
+								{
+									"key": "petId",
+									"value": "{{petId}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get pets by status",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const statusList = [ 'available', 'pending', 'sold'];\r",
+									"const status = statusList[Math.floor(Math.random() * statusList.length)];\r",
+									"\r",
+									"pm.environment.set('petStatus', status);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const expectedCategory = pm.environment.get('petCategory');\r",
+									"\r",
+									"pm.test(\"Pets with expected status\", function () {\r",
+									"    const expectedStatus = pm.environment.get('petStatus');\r",
+									"    var jsonData = pm.response.json();\r",
+									"    jsonData.forEach(pet => {\r",
+									"        pm.expect(pet.status).to.eq(expectedStatus);\r",
+									"    })\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/pet/findByStatus?status={{petStatus}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pet",
+								"findByStatus"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "{{petStatus}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add a new pet",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"let jsonData = pm.response.json();\r",
+									"const expectedPetId = pm.environment.get('petId');\r",
+									"const expectedPetName = pm.environment.get('petName');\r",
+									"const expectedCategory = pm.environment.get('petCategory');\r",
+									"\r",
+									"// tests\r",
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Pet's id\", function () {\r",
+									"    pm.expect((jsonData.id)).to.eq(Number(expectedPetId));\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Pet's category\", function () {\r",
+									"    pm.expect(jsonData.category.name).to.eq((expectedCategory));\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Pet's name\", function () {\r",
+									"    pm.expect((jsonData.name)).to.eql(expectedPetName);\r",
+									"});\r",
+									"\r",
+									"\r",
+									"// post-request\r",
+									"const petId = pm.environment.get('petId');\r",
+									"var options = {\r",
+									"  'method': 'DELETE',\r",
+									"  'url': `https://petstore.swagger.io/v2/pet/${petId}`,\r",
+									"  'header': {\r",
+									"  }\r",
+									"};\r",
+									"\r",
+									"pm.sendRequest(options, (error, response) => {\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const petId = pm.environment.replaceIn(\"{{$randomInt}}\");\r",
+									"const petCategory = pm.environment.replaceIn(\"{{$randomJobType}}\");\r",
+									"const petName = pm.environment.replaceIn(\"{{$randomFirstName}}\");\r",
+									"pm.environment.set('petId', petId);\r",
+									"pm.environment.set('petCategory', petCategory);\r",
+									"pm.environment.set('petName', petName);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"id\": {{petId}},\r\n    \"category\": {\r\n        \"id\": 1,\r\n        \"name\": \"{{petCategory}}\"\r\n    },\r\n    \"name\": \"{{petName}}\",\r\n    \"photoUrls\": [],\r\n    \"tags\": [\r\n        {\r\n            \"id\": 1,\r\n            \"name\": \"arny_cool\"\r\n        }\r\n    ],\r\n    \"status\": \"available\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/pet",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pet"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Upload an image",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const randomId = pm.environment.replaceIn(\"{{$randomInt}}\");\r",
+									"\r",
+									"const options = {\r",
+									"  'method': 'POST',\r",
+									"  'url': 'https://petstore.swagger.io/v2/pet',\r",
+									"  'header': {\r",
+									"    'Content-Type': 'application/json',\r",
+									"  },\r",
+									"  body: JSON.stringify({\r",
+									"    \"id\": `${randomId}`,\r",
+									"    \"category\": {\r",
+									"      \"id\": 1,\r",
+									"      \"name\": \"Executive\"\r",
+									"    },\r",
+									"    \"name\": \"Arny\",\r",
+									"    \"photoUrls\": [],\r",
+									"    \"tags\": [\r",
+									"      {\r",
+									"        \"id\": 1,\r",
+									"        \"name\": \"arny_cool\"\r",
+									"      }\r",
+									"    ],\r",
+									"    \"status\": \"available\"\r",
+									"  })\r",
+									"};\r",
+									"\r",
+									"pm.environment.set('createPetRequestBody', options.body);\r",
+									"\r",
+									"pm.sendRequest(options, (error, response) => {\r",
+									"   const data = response.json();\r",
+									"   pm.environment.set('petId', data.id);\r",
+									"});\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"//tests \r",
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Image was added\", function () {\r",
+									"    var jsonData = pm.response.json();\r",
+									"    pm.expect(jsonData.message).to.contain('sobaka_haski.jpg');\r",
+									"});\r",
+									"\r",
+									"// post-request\r",
+									"const petId = pm.environment.get('petId');\r",
+									"var options = {\r",
+									"  'method': 'DELETE',\r",
+									"  'url': `https://petstore.swagger.io/v2/pet/${petId}`,\r",
+									"  'header': {\r",
+									"  }\r",
+									"};\r",
+									"\r",
+									"pm.sendRequest(options, () => {\r",
+									"});\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "additionalMetadata",
+									"value": "image",
+									"type": "text"
+								},
+								{
+									"key": "file",
+									"type": "file",
+									"src": "sobaka_haski.jpg"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/pet/:petId/uploadImage",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pet",
+								":petId",
+								"uploadImage"
+							],
+							"variable": [
+								{
+									"key": "petId",
+									"value": "{{petId}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update an existing pet",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"//tests \r",
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"let jsonData = pm.response.json();\r",
+									"const expectedPetName = pm.environment.get('petName');\r",
+									"const expectedCategory = pm.environment.get('petCategory');\r",
+									"\r",
+									"pm.test(\"Pet's category\", function () {\r",
+									"    pm.expect(jsonData.category.name).to.eq((expectedCategory));\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Pet's name\", function () {\r",
+									"    pm.expect((jsonData.name)).to.eql(expectedPetName);\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const randomId = pm.environment.replaceIn(\"{{$randomInt}}\");\r",
+									"\r",
+									"const options = {\r",
+									"  'method': 'POST',\r",
+									"  'url': 'https://petstore.swagger.io/v2/pet',\r",
+									"  'header': {\r",
+									"    'Content-Type': 'application/json',\r",
+									"  },\r",
+									"  body: JSON.stringify({\r",
+									"    \"id\": `${randomId}`,\r",
+									"    \"category\": {\r",
+									"      \"id\": 1,\r",
+									"      \"name\": \"Executive\"\r",
+									"    },\r",
+									"    \"name\": \"Arny\",\r",
+									"    \"photoUrls\": [],\r",
+									"    \"tags\": [\r",
+									"      {\r",
+									"        \"id\": 1,\r",
+									"        \"name\": \"arny_cool\"\r",
+									"      }\r",
+									"    ],\r",
+									"    \"status\": \"available\"\r",
+									"  })\r",
+									"};\r",
+									"\r",
+									"pm.environment.set('createPetRequestBody', options.body);\r",
+									"\r",
+									"pm.sendRequest(options, (error, response) => {\r",
+									"   const data = response.json();\r",
+									"   pm.environment.set('petId', data.id);\r",
+									"});\r",
+									"\r",
+									"// test data\r",
+									"const petCategory = pm.environment.replaceIn(\"{{$randomJobType}}\");\r",
+									"const petName = pm.environment.replaceIn(\"{{$randomFirstName}}\");\r",
+									"pm.environment.set('petCategory', petCategory);\r",
+									"pm.environment.set('petName', petName);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"id\": {{petId}},\r\n    \"category\": {\r\n        \"id\": 1,\r\n        \"name\": \"{{petCategory}}\"\r\n    },\r\n    \"name\": \"{{petName}}\",\r\n    \"photoUrls\": [],\r\n    \"tags\": [\r\n        {\r\n            \"id\": 1,\r\n            \"name\": \"arny_cool\"\r\n        }\r\n    ],\r\n    \"status\": \"available\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/pet",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pet"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete a pet",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const randomId = pm.environment.replaceIn(\"{{$randomInt}}\");\r",
+									"\r",
+									"const options = {\r",
+									"  'method': 'POST',\r",
+									"  'url': 'https://petstore.swagger.io/v2/pet',\r",
+									"  'header': {\r",
+									"    'Content-Type': 'application/json',\r",
+									"  },\r",
+									"  body: JSON.stringify({\r",
+									"    \"id\": `${randomId}`,\r",
+									"    \"category\": {\r",
+									"      \"id\": 1,\r",
+									"      \"name\": \"Executive\"\r",
+									"    },\r",
+									"    \"name\": \"Arny\",\r",
+									"    \"photoUrls\": [],\r",
+									"    \"tags\": [\r",
+									"      {\r",
+									"        \"id\": 1,\r",
+									"        \"name\": \"arny_cool\"\r",
+									"      }\r",
+									"    ],\r",
+									"    \"status\": \"available\"\r",
+									"  })\r",
+									"};\r",
+									"\r",
+									"pm.environment.set('createPetRequestBody', options.body);\r",
+									"\r",
+									"pm.sendRequest(options, (error, response) => {\r",
+									"   const data = response.json();\r",
+									"   pm.environment.set('petId', data.id);\r",
+									"});\r",
+									"\r",
+									"// test data\r",
+									"const petCategory = pm.environment.replaceIn(\"{{$randomJobType}}\");\r",
+									"const petName = pm.environment.replaceIn(\"{{$randomFirstName}}\");\r",
+									"pm.environment.set('petCategory', petCategory);\r",
+									"pm.environment.set('petName', petName);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();\r",
+									"const expectedPetId = pm.environment.get('petId');\r",
+									"\r",
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Response format is correst\", function () {\r",
+									"['code', 'type', 'message'].forEach(property => {\r",
+									"    pm.expect(jsonData.hasOwnProperty(property)).to.be.true;\r",
+									"    });\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Message is correst\", function () {\r",
+									"    pm.expect(jsonData.message).to.eq(expectedPetId.toString());\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/pet/:petId",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pet",
+								":petId"
+							],
+							"variable": [
+								{
+									"key": "petId",
+									"value": "{{petId}}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}
